@@ -31,11 +31,11 @@ func defaultInstallConfig() *types.InstallConfig {
 				},
 			},
 		},
-		Machines: []types.MachinePool{
-			{
-				Name:     "master",
-				Replicas: func(x int64) *int64 { return &x }(3),
-			},
+		ControlPlane: types.MachinePool{
+			Name:     "master",
+			Replicas: func(x int64) *int64 { return &x }(3),
+		},
+		Compute: []types.MachinePool{
 			{
 				Name:     "worker",
 				Replicas: func(x int64) *int64 { return &x }(3),
@@ -56,9 +56,10 @@ func defaultLibvirtInstallConfig() *types.InstallConfig {
 	c.Networking.MachineCIDR = libvirtdefaults.DefaultMachineCIDR
 	c.Platform.Libvirt = &libvirt.Platform{}
 	libvirtdefaults.SetPlatformDefaults(c.Platform.Libvirt)
-	for i, m := range c.Machines {
+	c.ControlPlane.Replicas = func(x int64) *int64 { return &x }(1)
+	for i, m := range c.Compute {
 		m.Replicas = func(x int64) *int64 { return &x }(1)
-		c.Machines[i] = m
+		c.Compute[i] = m
 	}
 	return c
 }
@@ -188,11 +189,11 @@ func TestSetInstallConfigDefaults(t *testing.T) {
 		{
 			name: "Machines present",
 			config: &types.InstallConfig{
-				Machines: []types.MachinePool{{Name: "test-machine"}},
+				Compute: []types.MachinePool{{Name: "test-machine"}},
 			},
 			expected: func() *types.InstallConfig {
 				c := defaultInstallConfig()
-				c.Machines = []types.MachinePool{{Name: "test-machine"}}
+				c.Compute = []types.MachinePool{{Name: "test-machine"}}
 				return c
 			}(),
 		},

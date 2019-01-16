@@ -43,11 +43,17 @@ type InstallConfig struct {
 	// Networking defines the pod network provider in the cluster.
 	*Networking `json:"networking,omitempty"`
 
-	// Machines is the list of MachinePools that need to be installed.
+	// ControlPlane is the master MachinePool to be installed.
 	// +optional
-	// Default on AWS and OpenStack is 3 masters and 3 workers.
-	// Default on Libvirt is 1 master and 1 worker.
-	Machines []MachinePool `json:"machines,omitempty"`
+	// Default on AWS and OpenStack is 3 masters.
+	// Default on Libvirt is 1 master.
+	ControlPlane MachinePool
+
+	// Compute is the list of worker MachinePools to be installed.
+	// +optional
+	// Default on AWS and OpenStack is 3 workers.
+	// Default on Libvirt is 1 worker.
+	Compute []MachinePool
 
 	// Platform is the configuration for the specific platform upon which to
 	// perform the installation.
@@ -60,10 +66,8 @@ type InstallConfig struct {
 // MasterCount returns the number of replicas in the master machine pool,
 // defaulting to one if no machine pool was found.
 func (c *InstallConfig) MasterCount() int {
-	for _, m := range c.Machines {
-		if m.Name == "master" && m.Replicas != nil {
-			return int(*m.Replicas)
-		}
+	if c.ControlPlane.Replicas != nil {
+		return int(*c.ControlPlane.Replicas)
 	}
 	return 1
 }

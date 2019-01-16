@@ -43,24 +43,31 @@ func SetInstallConfigDefaults(c *types.InstallConfig) {
 			},
 		}
 	}
-	if len(c.Machines) == 0 {
+
+	if (c.ControlPlane == types.MachinePool{}) {
 		numberOfMasters := int64(3)
-		numberOfWorkers := int64(3)
 		if c.Platform.Libvirt != nil {
 			numberOfMasters = 1
+		}
+		c.ControlPlane = types.MachinePool{
+			Name:     "master",
+			Replicas: func(x int64) *int64 { return &x }(numberOfMasters),
+		}
+	}
+
+	if len(c.Compute) == 0 {
+		numberOfWorkers := int64(3)
+		if c.Platform.Libvirt != nil {
 			numberOfWorkers = 1
 		}
-		c.Machines = []types.MachinePool{
-			{
-				Name:     "master",
-				Replicas: func(x int64) *int64 { return &x }(numberOfMasters),
-			},
+		c.Compute = []types.MachinePool{
 			{
 				Name:     "worker",
 				Replicas: func(x int64) *int64 { return &x }(numberOfWorkers),
 			},
 		}
 	}
+
 	switch {
 	case c.Platform.AWS != nil:
 		awsdefaults.SetPlatformDefaults(c.Platform.AWS)
